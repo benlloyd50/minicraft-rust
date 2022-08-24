@@ -1,5 +1,5 @@
 [package]
-name = "bevy_test_game"
+name = "rustcraft"
 version = "0.1.0"
 edition = "2021"
 
