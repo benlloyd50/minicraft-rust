@@ -1,0 +1,28 @@
+name: PushGameToWebsite
+
+#~~~~~~WHEN~~~~~~~~~
+on:
+  push:
+    paths:
+      - 'rustcraft/'
+    
+  workflow_dispatch:
+
+#~~~~WHAT TO DO~~~~~~
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Push game files to another repo
+        uses: dmnemec/copy_file_to_another_repo_action@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+        with:
+          source_file: 'rustcraft/'
+          destination_repo: 'benlloyd50/Portfolio'
+          user_email: 'benji6090@gmail.com'
+          user_name: 'benlloyd50'
+          commit_message: 'Updated game from master repo'
