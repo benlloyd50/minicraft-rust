@@ -67,17 +67,17 @@ enum Direction {
 //     camera_entity: Entity,
 // }
 
-fn camera_follow_player(
-    mut cameras: Query<&mut Transform, With<Camera2d>>,
-    players: Query<&Transform, With<Player>>,
-) {
-    for player in players.iter() {
-        for mut cam in cameras.iter_mut() {
-            cam.translation.x = player.translation.x;
-            cam.translation.y = player.translation.y;
-        }
-    }
-}
+// fn camera_follow_player(
+//     mut cameras: Query<&mut Transform, With<Camera2d>>,
+//     players: Query<&Transform, With<Player>>,
+// ) {
+//     for player in players.iter() {
+//         for mut cam in cameras.iter_mut() {
+//             cam.translation.x = player.translation.x;
+//             cam.translation.y = player.translation.y;
+//         }
+//     }
+// }
 
 fn load_player_with_follow_camera(
     mut commands: Commands,
