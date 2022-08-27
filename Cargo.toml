@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 bevy = "0.8.0" 
+bevy_ecs_tilemap = "0.7"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
