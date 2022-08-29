@@ -3,7 +3,7 @@ use bevy_ecs_tilemap::prelude::*;
 
 const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
 // pub const RESOLUTION: f32 = 16.0 / 9.0;
-const PLAYER_SPEED: f32 = 25.0;
+const PLAYER_SPEED: f32 = 40.0;
 const TIME_STEP: f32 = 1.0 / 60.0;
 
 const Z_CAM: f32 = 100.;
@@ -101,15 +101,12 @@ fn load_player_with_cam(
         })
         .insert(Direction::Up)
         .insert(Player)
-        .insert(AnimationTimer(Timer::from_seconds(0.2, true)))
+        .insert(AnimationTimer(Timer::from_seconds(0.175, true)))
         .insert(State::Idle)
         .id();
 
     let camera_entity = commands
-        .spawn_bundle(Camera2dBundle {
-            transform: Transform::from_xyz(0., 0., Z_CAM),
-            ..Default::default()
-        })
+        .spawn_bundle(Camera2dBundle::new_with_far(Z_CAM))
         .id();
     // commands.insert_resource(PlayerData {
     //     player_entity,
