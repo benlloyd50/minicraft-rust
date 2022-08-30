@@ -4,7 +4,7 @@ name: PushGameToWebsite
 on:
   push:
     paths:
-      - 'rustcraft/'
+      - 'rustcraft'
     
   workflow_dispatch:
 
