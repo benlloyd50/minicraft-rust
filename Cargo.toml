@@ -5,9 +5,12 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+# Remember the game relies on these a layer of abstraction or relying on updates is necessary
 [dependencies]
-bevy = "0.8.0" 
+bevy = "0.8.0"
 bevy_ecs_tilemap = "0.7"
+bevy_asset_loader = { version = "0.12.1", features = ["2d"] }
+bevy-inspector-egui = "0.12.1"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
@@ -17,3 +20,6 @@ opt-level = 1
 [profile.dev.package."*"]
 opt-level = 3
 
+# make release builds faster
+[profile.release]
+lto = "thin"
