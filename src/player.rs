@@ -6,7 +6,6 @@ use bevy_inspector_egui::Inspectable;
 
 const Z_PLAYER: f32 = 40.;
 const PLAYER_SPEED: f32 = 40.0;
-// const TIME_STEP: f32 = 1.0 / 60.0;
 
 pub struct PlayerPlugin;
 
@@ -15,18 +14,31 @@ impl Plugin for PlayerPlugin {
         app.add_system_set(SystemSet::on_enter(AppState::InGame).with_system(load_player))
             .add_system_set(
                 SystemSet::on_update(AppState::InGame)
-                    .with_system(player_input)
+                    .with_system(player_input.label(PSystems::Input))
+                    .with_system(move_player.label(PSystems::Movement).after(PSystems::Input))
                     .with_system(direction_animation),
             );
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash, SystemLabel)]
+enum PSystems {
+    Input,
+    Movement,
+}
+
+#[derive(Component)]
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
 #[derive(Component, Inspectable)]
 pub struct Player;
 
-//TODO: Consider moving these Components into a shared class
 #[derive(Component)]
-enum State {
+enum PlayerState {
     Idle,
     Moving,
 }
@@ -35,11 +47,8 @@ enum State {
 pub struct AnimationTimer(Timer);
 
 #[derive(Component)]
-pub enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
+pub struct InputCapture {
+    movement: Vec2,
 }
 
 fn load_player(mut commands: Commands, sprites: Res<SpriteAssets>) {
@@ -49,10 +58,13 @@ fn load_player(mut commands: Commands, sprites: Res<SpriteAssets>) {
             transform: Transform::from_xyz(10., 0., Z_PLAYER),
             ..Default::default()
         })
-        .insert(Direction::Up)
         .insert(Player)
         .insert(AnimationTimer(Timer::from_seconds(0.175, true)))
-        .insert(State::Idle)
+        .insert(PlayerState::Idle)
+        .insert(InputCapture {
+            movement: Vec2::ZERO,
+        })
+        .insert(Direction::Down)
         .id();
 }
 
@@ -62,15 +74,15 @@ fn direction_animation(
         &mut AnimationTimer,
         &mut TextureAtlasSprite,
         &mut Direction,
-        &mut State,
+        &mut PlayerState,
     )>,
 ) {
     for (mut timer, mut sprite, dir, state) in &mut q {
         match *state {
-            State::Idle => {
+            PlayerState::Idle => {
                 return;
             }
-            State::Moving => {}
+            PlayerState::Moving => {}
         }
         timer.tick(time.delta());
         if timer.just_finished() {
@@ -96,47 +108,42 @@ fn direction_animation(
     }
 }
 
-//TODO: We should use some sort of move function rather than this
 fn player_input(
-    time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<(&mut Transform, &mut Direction, &mut State, &Player)>,
+    mut q: Query<(&mut InputCapture, &mut Direction), With<Player>>,
 ) {
-    let (mut p_transform, mut p_direction, mut state, _) = query.single_mut();
-    let mut input = Vec2::ZERO;
+    let (mut input, mut dir) = q.single_mut();
+    input.movement = Vec2::ZERO;
 
     if keyboard_input.pressed(KeyCode::A) {
-        input.x -= 1.0;
-        *p_direction = Direction::Left;
+        input.movement.x -= 1.0;
+        *dir = Direction::Left;
     }
     if keyboard_input.pressed(KeyCode::D) {
-        input.x += 1.0;
-        *p_direction = Direction::Right;
+        input.movement.x += 1.0;
+        *dir = Direction::Right;
     }
     if keyboard_input.pressed(KeyCode::W) {
-        input.y += 1.0;
-        *p_direction = Direction::Up;
+        input.movement.y += 1.0;
+        *dir = Direction::Up;
     }
     if keyboard_input.pressed(KeyCode::S) {
-        input.y -= 1.0;
-        *p_direction = Direction::Down;
-    }
-
-    move_entity(
-        &mut *p_transform,
-        input.x * PLAYER_SPEED * time.delta_seconds(),
-        input.y * PLAYER_SPEED * time.delta_seconds(),
-    );
-
-    if input != Vec2::ZERO {
-        *state = State::Moving
-    } else {
-        *state = State::Idle
+        input.movement.y -= 1.0;
+        *dir = Direction::Down;
     }
 }
 
-//Moves the transform component
-fn move_entity(transform: &mut Transform, dx: f32, dy: f32) {
-    transform.translation.x += dx;
-    transform.translation.y += dy;
+fn move_player(
+    time: Res<Time>,
+    mut q: Query<(&mut Transform, &mut PlayerState, &InputCapture), With<Player>>,
+) {
+    let (mut transform, mut state, input_val) = q.single_mut();
+    transform.translation.x += input_val.movement.x * PLAYER_SPEED * time.delta_seconds();
+    transform.translation.y += input_val.movement.y * PLAYER_SPEED * time.delta_seconds();
+
+    if input_val.movement != Vec2::ZERO {
+        *state = PlayerState::Moving;
+    } else {
+        *state = PlayerState::Idle;
+    }
 }
