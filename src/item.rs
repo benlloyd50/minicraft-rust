@@ -44,6 +44,7 @@ impl Default for Item {
 pub struct Inventory {
     pub items: Vec<Item>,
     pub capacity: i32,
+    pub last_picked_up_item_id: u32, //This variable is a dumb fix for events sending twice but it works. How elegant I feel it is would be another topic but so is ECS.
 }
 
 impl Inventory {
@@ -51,6 +52,7 @@ impl Inventory {
         Self {
             items: vec![],
             capacity,
+            last_picked_up_item_id: 0,
         }
     }
 }
@@ -105,6 +107,8 @@ fn add_to_inventory(
                     ev_inventory.items.insert(0, ground_item.clone());
                 }
                 println!("entity id:{} despawned", ev.item.id());
+                //when we go to drop/remove items from the inventory, that should reset the last picked up id to 0
+                ev_inventory.last_picked_up_item_id = ev.item.id();
                 commands.entity(ev.item).despawn();
             }
             Err(err) => eprintln!("{}, id:{}", err, ev.item.id()),

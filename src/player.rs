@@ -157,25 +157,25 @@ fn move_player(
 
 //A collider system may be more advantageous
 fn pickup_item(
-    player_q: Query<(&Transform, Entity), (With<Player>, Without<Item>)>,
+    player_q: Query<(&Transform, Entity, &Inventory), (With<Player>, Without<Item>)>,
     items_q: Query<(&Transform, Entity, &Item), (Without<Inventory>, Without<Player>)>,
     mut ev_itempickup: EventWriter<ItemPickup>,
     noises: Res<SoundAssets>,
     audio: Res<Audio>,
 ) {
-    let (player, pid) = player_q.single();
-    for (transform, iid, info) in items_q.iter() {
+    let (player, who, inv) = player_q.single();
+    for (transform, item, info) in items_q.iter() {
         let item_pos = Vec2::new(transform.translation.x, transform.translation.y);
         let player_pos = Vec2::new(player.translation.x, player.translation.y);
         let dist = item_pos.distance(player_pos);
         // println!("{}", dist);
-        if dist < 8.0 {
+        if dist < 8.0 && inv.last_picked_up_item_id != item.id() {
             println!("Sending event to pickup");
             //Dont let this send second event for same item but how, should we keep track of last sent?
             ev_itempickup.send(ItemPickup {
-                item: iid,
+                item,
                 what_item: info.name.to_string(),
-                who: pid,
+                who,
             });
             //I can't fight the feeling that this should not be in the pickup item code
             audio.play(noises.item_pickup.clone()).with_volume(0.1);
