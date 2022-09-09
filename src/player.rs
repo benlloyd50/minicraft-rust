@@ -20,7 +20,11 @@ impl Plugin for PlayerPlugin {
             .add_system_set(
                 SystemSet::on_update(AppState::InGame)
                     .with_system(player_input.label(PSystems::Input))
-                    .with_system(move_player.label(PSystems::Movement).after(PSystems::Input))
+                    .with_system(
+                        move_player
+                            .label(PSystems::Movement)
+                            .before(PSystems::Input),
+                    )
                     .with_system(direction_animation)
                     .with_system(pickup_item.after(PSystems::Movement)),
             );

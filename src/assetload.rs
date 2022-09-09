@@ -12,7 +12,8 @@ impl Plugin for AssetLoadPlugin {
                 .continue_to_state(AppState::GameLoad)
                 .with_collection::<SpriteAssets>()
                 .with_collection::<SoundAssets>(),
-        );
+        )
+        .add_state(AppState::AssetLoad);
     }
 }
 

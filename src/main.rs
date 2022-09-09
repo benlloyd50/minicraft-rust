@@ -1,25 +1,18 @@
 mod assetload;
 mod camera;
 mod debug;
+mod engine;
 mod item;
 mod player;
 mod states;
-pub use assetload::AssetLoadPlugin;
 pub use assetload::SpriteAssets;
-use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
-use bevy::diagnostic::LogDiagnosticsPlugin;
-use bevy_kira_audio::AudioPlugin;
 pub use camera::CameraPlugin;
-pub use debug::DebugPlugin;
+pub use engine::EnginePlugins;
 pub use item::ItemPlugin;
 pub use player::PlayerPlugin;
 pub use states::AppState;
 
-use bevy::{
-    prelude::*,
-    render::texture::{ImageSampler, ImageSettings},
-    window::PresentMode,
-};
+use bevy::prelude::*;
 
 use bevy_ecs_tilemap::prelude::*;
 
@@ -27,32 +20,14 @@ const Z_FLOOR: f32 = 0.;
 
 fn main() {
     let _app = App::new()
-        .insert_resource(ImageSettings {
-            default_sampler: ImageSampler::nearest_descriptor(),
-        })
-        .insert_resource(WindowDescriptor {
-            width: 640.0,
-            height: 480.0,
-            title: "MiniCraft [Rust]".to_string(),
-            present_mode: PresentMode::AutoVsync,
-            resizable: false,
-            ..Default::default()
-        })
-        .add_plugin(AssetLoadPlugin)
-        .add_state(AppState::AssetLoad)
-        .add_plugins(DefaultPlugins)
-        .add_plugin(AudioPlugin)
+        .add_plugins(EnginePlugins)
         .add_system_set(SystemSet::on_enter(AppState::GameLoad).with_system(tm_startup))
         .add_system_set(SystemSet::on_update(AppState::GameLoad).with_system(enter_game))
         .add_system_set(SystemSet::on_update(AppState::InGame).with_system(swap_texture_or_hide))
-        .add_plugin(DebugPlugin)
         .add_plugin(TilemapPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(CameraPlugin)
         .add_plugin(ItemPlugin)
-        // .add_plugin(LogDiagnosticsPlugin::default())
-        // .add_plugin(FrameTimeDiagnosticsPlugin::default())
-        .add_system(bevy::window::close_on_esc)
         .run();
 }
 

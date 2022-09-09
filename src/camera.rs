@@ -36,7 +36,7 @@ fn load_camera(mut commands: Commands) {
 
 fn camera_follow_player(
     mut camera: Query<(&mut Transform, &Camera2d), Without<Player>>,
-    players: Query<(&mut Transform, &Player), Without<Camera2d>>,
+    players: Query<(&Transform, &Player), Without<Camera2d>>,
 ) {
     for (player, _) in players.iter() {
         for (mut cam, _) in camera.iter_mut() {
