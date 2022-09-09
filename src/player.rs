@@ -1,5 +1,4 @@
 use crate::{
-    assetload::SoundAssets,
     item::{Inventory, Item, ItemPickup},
     SpriteAssets,
 };
@@ -7,7 +6,6 @@ use crate::{
 use super::AppState;
 use bevy::prelude::*;
 use bevy_inspector_egui::Inspectable;
-use bevy_kira_audio::{Audio, AudioControl};
 
 const Z_PLAYER: f32 = 40.;
 const PLAYER_SPEED: f32 = 40.0;
@@ -26,7 +24,11 @@ impl Plugin for PlayerPlugin {
                             .before(PSystems::Input),
                     )
                     .with_system(direction_animation)
-                    .with_system(pickup_item.after(PSystems::Movement)),
+                    .with_system(
+                        pickup_item
+                            .label(Interact::Caller)
+                            .after(PSystems::Movement),
+                    ),
             );
     }
 }
@@ -35,6 +37,13 @@ impl Plugin for PlayerPlugin {
 pub enum PSystems {
     Input,
     Movement,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, SystemLabel)]
+pub enum Interact {
+    Caller,
+    Reciever,
+    _Ui,
 }
 
 #[derive(Component)]
@@ -164,25 +173,21 @@ fn pickup_item(
     player_q: Query<(&Transform, Entity, &Inventory), (With<Player>, Without<Item>)>,
     items_q: Query<(&Transform, Entity, &Item), (Without<Inventory>, Without<Player>)>,
     mut ev_itempickup: EventWriter<ItemPickup>,
-    noises: Res<SoundAssets>,
-    audio: Res<Audio>,
 ) {
-    let (player, who, inv) = player_q.single();
+    let (player, who, _inv) = player_q.single();
     for (transform, item, info) in items_q.iter() {
         let item_pos = Vec2::new(transform.translation.x, transform.translation.y);
         let player_pos = Vec2::new(player.translation.x, player.translation.y);
         let dist = item_pos.distance(player_pos);
         // println!("{}", dist);
-        if dist < 8.0 && inv.last_picked_up_item_id != item.id() {
+        // && inv.last_picked_up_item_id != item.id()
+        if dist < 8.0 {
             println!("Sending event to pickup");
-            //Dont let this send second event for same item but how, should we keep track of last sent?
             ev_itempickup.send(ItemPickup {
                 item,
                 what_item: info.name.to_string(),
                 who,
             });
-            //I can't fight the feeling that this should not be in the pickup item code
-            audio.play(noises.item_pickup.clone()).with_volume(0.1);
         }
     }
 }

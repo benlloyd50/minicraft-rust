@@ -4,12 +4,14 @@ mod debug;
 mod engine;
 mod item;
 mod player;
+mod sound_event;
 mod states;
 pub use assetload::SpriteAssets;
 pub use camera::CameraPlugin;
 pub use engine::EnginePlugins;
 pub use item::ItemPlugin;
 pub use player::PlayerPlugin;
+pub use sound_event::GameSoundPlugin;
 pub use states::AppState;
 
 use bevy::prelude::*;
@@ -28,6 +30,7 @@ fn main() {
         .add_plugin(PlayerPlugin)
         .add_plugin(CameraPlugin)
         .add_plugin(ItemPlugin)
+        .add_plugin(GameSoundPlugin)
         .run();
 }
 
