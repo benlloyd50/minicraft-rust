@@ -1,8 +1,13 @@
-use crate::SpriteAssets;
+use crate::{
+    assetload::SoundAssets,
+    item::{Inventory, Item, ItemPickup},
+    SpriteAssets,
+};
 
 use super::AppState;
 use bevy::prelude::*;
 use bevy_inspector_egui::Inspectable;
+use bevy_kira_audio::{Audio, AudioControl};
 
 const Z_PLAYER: f32 = 40.;
 const PLAYER_SPEED: f32 = 40.0;
@@ -11,18 +16,19 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_enter(AppState::InGame).with_system(load_player))
+        app.add_system_set(SystemSet::on_enter(AppState::InGame).with_system(startup))
             .add_system_set(
                 SystemSet::on_update(AppState::InGame)
                     .with_system(player_input.label(PSystems::Input))
                     .with_system(move_player.label(PSystems::Movement).after(PSystems::Input))
-                    .with_system(direction_animation),
+                    .with_system(direction_animation)
+                    .with_system(pickup_item.after(PSystems::Movement)),
             );
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, SystemLabel)]
-enum PSystems {
+pub enum PSystems {
     Input,
     Movement,
 }
@@ -51,7 +57,7 @@ pub struct InputCapture {
     movement: Vec2,
 }
 
-fn load_player(mut commands: Commands, sprites: Res<SpriteAssets>) {
+fn startup(mut commands: Commands, sprites: Res<SpriteAssets>) {
     let _player_entity = commands
         .spawn_bundle(SpriteSheetBundle {
             texture_atlas: sprites.player_move.clone(),
@@ -65,6 +71,7 @@ fn load_player(mut commands: Commands, sprites: Res<SpriteAssets>) {
             movement: Vec2::ZERO,
         })
         .insert(Direction::Down)
+        .insert(Inventory::new(20))
         .id();
 }
 
@@ -145,5 +152,33 @@ fn move_player(
         *state = PlayerState::Moving;
     } else {
         *state = PlayerState::Idle;
+    }
+}
+
+//A collider system may be more advantageous
+fn pickup_item(
+    player_q: Query<(&Transform, Entity), (With<Player>, Without<Item>)>,
+    items_q: Query<(&Transform, Entity, &Item), (Without<Inventory>, Without<Player>)>,
+    mut ev_itempickup: EventWriter<ItemPickup>,
+    noises: Res<SoundAssets>,
+    audio: Res<Audio>,
+) {
+    let (player, pid) = player_q.single();
+    for (transform, iid, info) in items_q.iter() {
+        let item_pos = Vec2::new(transform.translation.x, transform.translation.y);
+        let player_pos = Vec2::new(player.translation.x, player.translation.y);
+        let dist = item_pos.distance(player_pos);
+        // println!("{}", dist);
+        if dist < 8.0 {
+            println!("Sending event to pickup");
+            //Dont let this send second event for same item but how, should we keep track of last sent?
+            ev_itempickup.send(ItemPickup {
+                item: iid,
+                what_item: info.name.to_string(),
+                who: pid,
+            });
+            //I can't fight the feeling that this should not be in the pickup item code
+            audio.play(noises.item_pickup.clone()).with_volume(0.1);
+        }
     }
 }

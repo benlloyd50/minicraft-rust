@@ -1,12 +1,17 @@
 mod assetload;
 mod camera;
 mod debug;
+mod item;
 mod player;
 mod states;
 pub use assetload::AssetLoadPlugin;
-use assetload::SpriteAssets;
+pub use assetload::SpriteAssets;
+use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
+use bevy::diagnostic::LogDiagnosticsPlugin;
+use bevy_kira_audio::AudioPlugin;
 pub use camera::CameraPlugin;
 pub use debug::DebugPlugin;
+pub use item::ItemPlugin;
 pub use player::PlayerPlugin;
 pub use states::AppState;
 
@@ -28,7 +33,7 @@ fn main() {
         .insert_resource(WindowDescriptor {
             width: 640.0,
             height: 480.0,
-            title: "MiniRust".to_string(),
+            title: "MiniCraft [Rust]".to_string(),
             present_mode: PresentMode::AutoVsync,
             resizable: false,
             ..Default::default()
@@ -36,6 +41,7 @@ fn main() {
         .add_plugin(AssetLoadPlugin)
         .add_state(AppState::AssetLoad)
         .add_plugins(DefaultPlugins)
+        .add_plugin(AudioPlugin)
         .add_system_set(SystemSet::on_enter(AppState::GameLoad).with_system(tm_startup))
         .add_system_set(SystemSet::on_update(AppState::GameLoad).with_system(enter_game))
         .add_system_set(SystemSet::on_update(AppState::InGame).with_system(swap_texture_or_hide))
@@ -43,6 +49,10 @@ fn main() {
         .add_plugin(TilemapPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(CameraPlugin)
+        .add_plugin(ItemPlugin)
+        // .add_plugin(LogDiagnosticsPlugin::default())
+        // .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        .add_system(bevy::window::close_on_esc)
         .run();
 }
 
@@ -55,7 +65,7 @@ fn enter_game(mut state: ResMut<State<AppState>>) {
 }
 
 fn tm_startup(mut commands: Commands, tiles: Res<SpriteAssets>) {
-    let tilemap_size = TilemapSize { x: 100, y: 100 };
+    let tilemap_size = TilemapSize { x: 10, y: 10 };
 
     // Create a tilemap entity a little early.
     // We want this entity early because we need to tell each tile which tilemap entity

@@ -17,6 +17,9 @@ impl Plugin for CameraPlugin {
     }
 }
 
+#[derive(Component)]
+struct CamScrollLock(bool);
+
 fn load_camera(mut commands: Commands) {
     let _camera_entity = commands
         .spawn_bundle(Camera2dBundle {
@@ -27,6 +30,7 @@ fn load_camera(mut commands: Commands) {
             },
             ..default()
         })
+        .insert(CamScrollLock(true))
         .id();
 }
 
@@ -45,10 +49,19 @@ fn camera_follow_player(
 //TODO: zoom_scroll_speed could become a component probably?
 //TODO: could try to abstract input from this function
 fn zoom_camera(
-    mut camera_query: Query<(&mut Transform, &Camera2d), Without<Player>>,
+    mut camera_query: Query<(&mut Transform, &Camera2d, &mut CamScrollLock), Without<Player>>,
     mut scroll_wheel: EventReader<MouseWheel>,
+    keyboard_input: Res<Input<KeyCode>>,
 ) {
-    let (mut cam, _) = camera_query.single_mut();
+    let (mut cam, _, mut cam_lock) = camera_query.single_mut();
+
+    if keyboard_input.pressed(KeyCode::L) {
+        cam_lock.0 = !cam_lock.0;
+    }
+    if cam_lock.0 {
+        return;
+    }
+
     let zoom_scroll_speed = 0.05;
     for direction in scroll_wheel.iter() {
         cam.scale = (cam.scale + zoom_scroll_speed * direction.y)
