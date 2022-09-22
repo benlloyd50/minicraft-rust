@@ -70,8 +70,10 @@ pub struct InputCapture {
     movement: Vec2,
 }
 
+pub struct PlayerID(pub u32);
+
 fn startup(mut commands: Commands, sprites: Res<SpriteAssets>) {
-    let _player_entity = commands
+    let player_entity = commands
         .spawn_bundle(SpriteSheetBundle {
             texture_atlas: sprites.player_move.clone(),
             transform: Transform::from_xyz(10., 0., Z_PLAYER),
@@ -86,6 +88,8 @@ fn startup(mut commands: Commands, sprites: Res<SpriteAssets>) {
         .insert(Direction::Down)
         .insert(Inventory::new(20))
         .id();
+
+    commands.insert_resource(PlayerID(player_entity.id()));
 }
 
 fn direction_animation(
@@ -182,7 +186,7 @@ fn pickup_item(
         // println!("{}", dist);
         // && inv.last_picked_up_item_id != item.id()
         if dist < 8.0 {
-            println!("Sending event to pickup");
+            info!("Sending event to pickup");
             ev_itempickup.send(ItemPickup {
                 item,
                 what_item: info.name.to_string(),

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_kira_audio::{Audio, AudioControl};
 
-use crate::{assetload::SoundAssets, item::ItemPickup, AppState};
+use crate::{assetload::SoundAssets, item::PlayerPickupSuccess, AppState};
 pub struct GameSoundPlugin;
 
 impl Plugin for GameSoundPlugin {
@@ -11,11 +11,11 @@ impl Plugin for GameSoundPlugin {
 }
 
 pub fn p_item_pickup_sfx(
-    mut ev_itempickup: EventReader<ItemPickup>,
+    mut ev_itempickup: EventReader<PlayerPickupSuccess>,
     noises: Res<SoundAssets>,
     audio: Res<Audio>,
 ) {
     for _ in ev_itempickup.iter() {
-        audio.play(noises.item_pickup.clone()).with_volume(0.1);
+        audio.play(noises.item_pickup.clone()).with_volume(0.05);
     }
 }

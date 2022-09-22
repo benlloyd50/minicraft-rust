@@ -11,7 +11,8 @@ impl Plugin for AssetLoadPlugin {
             LoadingState::new(AppState::AssetLoad)
                 .continue_to_state(AppState::GameLoad)
                 .with_collection::<SpriteAssets>()
-                .with_collection::<SoundAssets>(),
+                .with_collection::<SoundAssets>()
+                .with_collection::<FontAssets>(),
         )
         .add_state(AppState::AssetLoad);
     }
@@ -29,10 +30,18 @@ pub struct SpriteAssets {
     #[asset(texture_atlas(tile_size_x = 8., tile_size_y = 8., columns = 14, rows = 2))]
     #[asset(path = "test_items.png")]
     pub items: Handle<TextureAtlas>,
+    #[asset(path = "menu.png")]
+    pub menu: Handle<Image>,
 }
 
 #[derive(AssetCollection)]
 pub struct SoundAssets {
     #[asset(path = "sounds/pickup.ogg")]
     pub item_pickup: Handle<AudioSource>,
+}
+
+#[derive(AssetCollection)]
+pub struct FontAssets {
+    #[asset(path = "fonts/CelticTime.ttf")]
+    pub celtic: Handle<Font>,
 }

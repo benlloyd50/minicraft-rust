@@ -6,6 +6,7 @@ mod item;
 mod player;
 mod sound_event;
 mod states;
+pub use assetload::FontAssets;
 pub use assetload::SpriteAssets;
 pub use camera::CameraPlugin;
 pub use engine::EnginePlugins;
@@ -19,13 +20,18 @@ use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
 
 const Z_FLOOR: f32 = 0.;
+// const Z_UI: f32 = 80.;
 
 fn main() {
     let _app = App::new()
         .add_plugins(EnginePlugins)
         .add_system_set(SystemSet::on_enter(AppState::GameLoad).with_system(tm_startup))
         .add_system_set(SystemSet::on_update(AppState::GameLoad).with_system(enter_game))
-        .add_system_set(SystemSet::on_update(AppState::InGame).with_system(swap_texture_or_hide))
+        .add_system_set(
+            SystemSet::on_update(AppState::InGame)
+                .with_system(swap_texture_or_hide)
+                .with_system(ui_test),
+        )
         .add_plugin(TilemapPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(CameraPlugin)
@@ -41,6 +47,8 @@ fn enter_game(mut state: ResMut<State<AppState>>) {
             .expect("Failed to change states");
     }
 }
+
+fn ui_test() {}
 
 fn tm_startup(mut commands: Commands, tiles: Res<SpriteAssets>) {
     let tilemap_size = TilemapSize { x: 10, y: 10 };
@@ -62,11 +70,13 @@ fn tm_startup(mut commands: Commands, tiles: Res<SpriteAssets>) {
     for x in 0..tilemap_size.x as u32 {
         for y in 0..tilemap_size.y as u32 {
             let tile_pos = TilePos { x, y };
+            let tile_index = rand::random::<u32>() % 5;
             let tile_entity = commands
                 .spawn()
                 .insert_bundle(TileBundle {
                     position: tile_pos,
                     tilemap_id: TilemapId(tilemap_entity),
+                    texture: TileTexture(tile_index),
                     ..Default::default()
                 })
                 .id();

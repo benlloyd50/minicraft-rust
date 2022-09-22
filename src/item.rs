@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
-use crate::{player::Interact, AppState, SpriteAssets};
+use crate::{
+    player::{Interact, PlayerID},
+    AppState, SpriteAssets,
+};
 
 pub struct ItemPlugin;
 
@@ -16,18 +19,20 @@ impl Plugin for ItemPlugin {
                 ),
             )
             .add_event::<ItemPickup>()
+            .add_event::<PlayerPickupSuccess>()
             .register_inspectable::<Inventory>()
             .register_inspectable::<Item>();
     }
 }
 
 const Z_ITEM: f32 = 35.;
-const MAX_ITEM_STACK: i32 = 999;
+const MAX_ITEM_STACK: u32 = 999;
 
 #[derive(Component, Inspectable, Clone)]
 pub struct Item {
     pub name: String,
-    pub amt: i32,
+    pub amt: u32,
+    pub sprite_index: u32,
 }
 
 impl PartialEq for Item {
@@ -42,6 +47,7 @@ impl Default for Item {
         Item {
             name: "Empty".to_string(),
             amt: 0,
+            sprite_index: 0,
         }
     }
 }
@@ -70,29 +76,34 @@ pub struct ItemPickup {
     pub who: Entity,
 }
 
+pub struct PlayerPickupSuccess;
+
 //Called when an entity pickups an item
 fn add_to_inventory(
     mut ev_itempickup: EventReader<ItemPickup>,
+    mut ev_success: EventWriter<PlayerPickupSuccess>,
     mut commands: Commands,
     mut inventories: Query<&mut Inventory>, //Every inventory
-    mut all_items: Query<(&Item, Option<&Stackable>)>, //Every item
+    all_items: Query<(&Item, Option<&Stackable>)>, //Every item
+    player_id: Res<PlayerID>,
 ) {
     for ev in ev_itempickup.iter() {
         let mut ev_inventory = match inventories.get_mut(ev.who) {
             Ok(inv) => {
-                if inv.items.len() as i32 <= inv.capacity {
+                if (inv.items.len() as i32) < inv.capacity {
                     inv
                 } else {
-                    eprintln!("Inventory is full, cannot perform action");
+                    warn!("Inventory is full, cannot perform action");
                     return;
                 }
             }
             Err(err) => {
-                panic!("There is no inventory on that entity err msg: {}", err);
+                error!("There is no inventory on that entity err msg: {}", err);
+                return;
             }
         };
 
-        match all_items.get_mut(ev.item) {
+        match all_items.get(ev.item) {
             //make sure the ground item still exists and an old event didnt already handle it
             Ok((ground_item, is_stackable)) => {
                 if is_stackable.is_some() && ev_inventory.items.contains(ground_item) {
@@ -110,7 +121,10 @@ fn add_to_inventory(
                     //If the item doesn't exist in the inventory or it does but it is not stackable
                     ev_inventory.items.insert(0, ground_item.clone());
                 }
-                println!("entity id:{} despawned", ev.item.id());
+                info!("entity id:{} despawned", ev.item.id());
+                if ev.who.id() == player_id.0 {
+                    ev_success.send(PlayerPickupSuccess);
+                }
                 commands.entity(ev.item).despawn();
             }
             Err(err) => eprintln!("{}, id:{}", err, ev.item.id()),
@@ -125,7 +139,7 @@ fn startup(mut commands: Commands, sprites: Res<SpriteAssets>) {
             .spawn_bundle(SpriteSheetBundle {
                 texture_atlas: sprites.items.clone(),
                 sprite: TextureAtlasSprite {
-                    index: 1,
+                    index: 4,
                     color: Color::MAROON,
                     ..default()
                 },
@@ -133,8 +147,9 @@ fn startup(mut commands: Commands, sprites: Res<SpriteAssets>) {
                 ..default()
             })
             .insert(Item {
-                name: "Wood".to_string(),
+                name: format!("Wood, {}", i % 10),
                 amt: 1,
+                sprite_index: 4,
             })
             .insert(Stackable);
     }
@@ -155,6 +170,7 @@ fn startup(mut commands: Commands, sprites: Res<SpriteAssets>) {
             .insert(Item {
                 name: "Pebble".to_string(),
                 amt: 1,
+                sprite_index: 2,
             })
             .insert(Stackable);
     }
