@@ -2,6 +2,7 @@ mod assetload;
 mod camera;
 mod debug;
 mod engine;
+mod inventory;
 mod item;
 mod player;
 mod sound_event;
@@ -10,7 +11,9 @@ pub use assetload::FontAssets;
 pub use assetload::SpriteAssets;
 pub use camera::CameraPlugin;
 pub use engine::EnginePlugins;
+pub use inventory::InventoryPlugin;
 pub use item::ItemPlugin;
+pub use player::Interact;
 pub use player::PlayerPlugin;
 pub use sound_event::GameSoundPlugin;
 pub use states::AppState;
@@ -20,22 +23,29 @@ use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
 
 const Z_FLOOR: f32 = 0.;
-// const Z_UI: f32 = 80.;
+const Z_UI: f32 = 80.;
 
 fn main() {
-    let _app = App::new()
+    App::new()
         .add_plugins(EnginePlugins)
-        .add_system_set(SystemSet::on_enter(AppState::GameLoad).with_system(tm_startup))
+        .add_system_set(
+            SystemSet::on_enter(AppState::GameLoad)
+                .with_system(tm_startup)
+                .with_system(ui_startup)
+                .with_system(font_render_startup),
+        )
         .add_system_set(SystemSet::on_update(AppState::GameLoad).with_system(enter_game))
         .add_system_set(
             SystemSet::on_update(AppState::InGame)
                 .with_system(swap_texture_or_hide)
-                .with_system(ui_test),
+                .with_system(toggle_ui_menu)
+                .after(Interact::Caller),
         )
         .add_plugin(TilemapPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(CameraPlugin)
         .add_plugin(ItemPlugin)
+        .add_plugin(InventoryPlugin)
         .add_plugin(GameSoundPlugin)
         .run();
 }
@@ -48,7 +58,40 @@ fn enter_game(mut state: ResMut<State<AppState>>) {
     }
 }
 
-fn ui_test() {}
+#[derive(Component)]
+// Maybe we should attach a player id for multiplayer?
+pub struct PlayerMenu;
+
+#[derive(Component)]
+pub struct FixedCamera;
+
+fn ui_startup(mut commands: Commands, elements: Res<SpriteAssets>) {
+    // This creates a menu that is fixed to the camera and is attached to the player
+    commands
+        .spawn_bundle(SpriteBundle {
+            texture: elements.menu.clone(),
+            transform: Transform::from_xyz(-30.0, -50.0, Z_UI),
+            visibility: Visibility { is_visible: false },
+            ..default()
+        })
+        .insert(PlayerMenu)
+        .insert(FixedCamera);
+}
+
+fn toggle_ui_menu(
+    keeb_input: Res<Input<KeyCode>>,
+    mut query: Query<(&mut Visibility, &mut Transform), With<FixedCamera>>,
+    cam: Query<(&Camera, &Transform), Without<FixedCamera>>,
+) {
+    let mut menu = query.single_mut();
+    let (_, cam) = cam.single();
+
+    menu.1.translation = Vec3::new(cam.translation.x - 30.0, cam.translation.y - 50.0, Z_UI);
+
+    if keeb_input.just_pressed(KeyCode::Tab) {
+        menu.0.is_visible = !menu.0.is_visible;
+    }
+}
 
 fn tm_startup(mut commands: Commands, tiles: Res<SpriteAssets>) {
     let tilemap_size = TilemapSize { x: 10, y: 10 };
@@ -103,6 +146,21 @@ fn tm_startup(mut commands: Commands, tiles: Res<SpriteAssets>) {
         });
 }
 
+fn font_render_startup(mut commands: Commands, font: Res<FontAssets>) {
+    let monogram = font.monogram.clone();
+    let text_style = TextStyle {
+        font: monogram,
+        font_size: 24.0,
+        color: Color::BLACK,
+    };
+    commands.spawn_bundle(Text2dBundle {
+        text: Text::from_section("This is a test.", text_style.clone())
+            .with_alignment(TextAlignment::CENTER),
+        transform: Transform::from_xyz(40.0, 180.0, Z_UI),
+        ..default()
+    });
+}
+
 fn swap_texture_or_hide(
     sprites: Res<SpriteAssets>,
     keyboard_input: Res<Input<KeyCode>>,
@@ -110,7 +168,7 @@ fn swap_texture_or_hide(
 ) {
     if keyboard_input.just_pressed(KeyCode::Space) {
         for (mut tilemap_tex, _) in &mut query {
-            if &tilemap_tex.0 == &sprites.tiles1 {
+            if tilemap_tex.0 == sprites.tiles1 {
                 tilemap_tex.0 = sprites.tiles2.clone();
             } else {
                 tilemap_tex.0 = sprites.tiles1.clone();

@@ -30,6 +30,9 @@ pub struct SpriteAssets {
     #[asset(texture_atlas(tile_size_x = 8., tile_size_y = 8., columns = 14, rows = 2))]
     #[asset(path = "test_items.png")]
     pub items: Handle<TextureAtlas>,
+    #[asset(texture_atlas(tile_size_x = 8., tile_size_y = 8., columns = 8, rows = 1))]
+    #[asset(path = "ui_and_effects.png")]
+    pub ui_and_effects: Handle<TextureAtlas>,
     #[asset(path = "menu.png")]
     pub menu: Handle<Image>,
 }
@@ -44,4 +47,6 @@ pub struct SoundAssets {
 pub struct FontAssets {
     #[asset(path = "fonts/CelticTime.ttf")]
     pub celtic: Handle<Font>,
+    #[asset(path = "fonts/monogram.ttf")]
+    pub monogram: Handle<Font>,
 }

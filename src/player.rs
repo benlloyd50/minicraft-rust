@@ -1,5 +1,6 @@
 use crate::{
-    item::{Inventory, Item, ItemPickup},
+    inventory::{Inventory, ItemPickup},
+    item::Item,
     SpriteAssets,
 };
 
@@ -172,10 +173,12 @@ fn move_player(
     }
 }
 
+type InventoryQuery<'a> = (&'a Transform, Entity, &'a Inventory);
+type ItemQuery<'a> = (&'a Transform, Entity, &'a Item);
 //A collider system may be more advantageous
 fn pickup_item(
-    player_q: Query<(&Transform, Entity, &Inventory), (With<Player>, Without<Item>)>,
-    items_q: Query<(&Transform, Entity, &Item), (Without<Inventory>, Without<Player>)>,
+    player_q: Query<InventoryQuery, (With<Player>, Without<Item>)>,
+    items_q: Query<ItemQuery, (Without<Inventory>, Without<Player>)>,
     mut ev_itempickup: EventWriter<ItemPickup>,
 ) {
     let (player, who, _inv) = player_q.single();

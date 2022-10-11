@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_kira_audio::{Audio, AudioControl};
 
-use crate::{assetload::SoundAssets, item::PlayerPickupSuccess, AppState};
+use crate::{assetload::SoundAssets, inventory::PlayerPickupSuccess, AppState};
 pub struct GameSoundPlugin;
 
 impl Plugin for GameSoundPlugin {

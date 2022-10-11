@@ -14,3 +14,5 @@ target/
 tiles.png
 tiles2.png
 2x/
+# sadly gonna ignore them just cause they are on the main computer normally anyways, just bloat
+*.aseprite
