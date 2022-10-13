@@ -6,7 +6,7 @@ use crate::{
 
 use super::AppState;
 use bevy::prelude::*;
-use bevy_inspector_egui::Inspectable;
+use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 const Z_PLAYER: f32 = 40.;
 const PLAYER_SPEED: f32 = 40.0;
@@ -30,7 +30,8 @@ impl Plugin for PlayerPlugin {
                             .label(Interact::Caller)
                             .after(PSystems::Movement),
                     ),
-            );
+            )
+            .register_inspectable::<PlayerState>();
     }
 }
 
@@ -57,7 +58,7 @@ enum Direction {
 #[derive(Component, Inspectable)]
 pub struct Player;
 
-#[derive(Component)]
+#[derive(Component, Inspectable)]
 enum PlayerState {
     Idle,
     Moving,
@@ -155,6 +156,9 @@ fn player_input(
     if keyboard_input.pressed(KeyCode::S) {
         input.movement.y -= 1.0;
         *dir = Direction::Down;
+    }
+    if keyboard_input.pressed(KeyCode::C) {
+        // Find a way to create action events that get taken care of
     }
 }
 

@@ -1,22 +1,30 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, ui::widget::ImageMode};
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 use crate::{
     item::Item,
     player::{Interact, PlayerID},
-    AppState,
+    AppState, FontAssets, SpriteAssets,
 };
+
+const MAX_ITEM_STACK: u32 = 999;
+const Z_UI: f32 = 80.;
 
 pub struct InventoryPlugin;
 
 impl Plugin for InventoryPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(
-            SystemSet::on_update(AppState::InGame).with_system(
-                add_to_inventory
-                    .label(Interact::Reciever)
-                    .after(Interact::Caller),
-            ),
+            SystemSet::on_enter(AppState::GameLoad).with_system(inventory_ui_startup),
+        )
+        .add_system_set(
+            SystemSet::on_update(AppState::InGame)
+                .with_system(
+                    add_to_inventory
+                        .label(Interact::Reciever)
+                        .after(Interact::Caller),
+                )
+                .with_system(toggle_ui_menu),
         )
         .add_event::<ItemPickup>()
         .add_event::<PlayerPickupSuccess>()
@@ -30,7 +38,18 @@ pub struct Inventory {
     pub capacity: i32,
 }
 
-const MAX_ITEM_STACK: u32 = 999;
+#[derive(Component)]
+pub struct Stackable;
+
+#[derive(Component)]
+// Maybe we should attach a player id for multiplayer?
+pub struct PlayerMenu;
+
+#[derive(Component)]
+pub struct InventoryUINode;
+
+#[derive(Component)]
+pub struct InventorySlot(i32);
 
 impl Inventory {
     pub fn new(capacity: i32) -> Self {
@@ -41,9 +60,18 @@ impl Inventory {
     }
 }
 
-#[derive(Component)]
-pub struct Stackable;
+fn toggle_ui_menu(
+    keeb_input: Res<Input<KeyCode>>,
+    mut query: Query<(&mut Visibility, &mut Transform), With<InventoryUINode>>,
+) {
+    let mut menu = query.single_mut();
 
+    if keeb_input.just_pressed(KeyCode::X) {
+        menu.0.is_visible = !menu.0.is_visible;
+    }
+}
+
+//Events
 pub struct ItemPickup {
     pub item: Entity,
     pub what_item: String,
@@ -104,4 +132,69 @@ fn add_to_inventory(
             Err(err) => eprintln!("{}, id:{}", err, ev.item.id()),
         };
     }
+}
+
+fn inventory_ui_startup(
+    mut commands: Commands,
+    font: Res<FontAssets>,
+    elements: Res<SpriteAssets>,
+) {
+    let text_style = TextStyle {
+        font: font.monogram.clone(),
+        font_size: 24.0,
+        color: Color::BLACK,
+    };
+    let window_style = Style {
+        align_self: AlignSelf::Center,
+        position_type: PositionType::Absolute,
+        position: UiRect {
+            top: Val::Percent(4.),
+            left: Val::Percent(15.),
+            ..default()
+        },
+        size: Size::new(Val::Px(400.), Val::Px(700.)),
+        ..default()
+    };
+    commands
+        .spawn_bundle(NodeBundle {
+            transform: Transform::from_xyz(0., 0., Z_UI),
+            ..default()
+        })
+        .insert(InventoryUINode)
+        .with_children(|parent| {
+            // the window which objects for the inventory ui will sit on
+            parent
+                .spawn_bundle(ImageBundle {
+                    image: UiImage {
+                        0: elements.menu.clone(),
+                    },
+                    style: window_style.clone(),
+                    image_mode: ImageMode::KeepAspect,
+                    ..default()
+                })
+                .with_children(|inv_parent| {
+                    // multiple text objects for items
+                    for i in 0..20 {
+                        let offset: f32 = i as f32 * 20.0;
+                        inv_parent
+                            .spawn_bundle(
+                                TextBundle::from_section(
+                                    format!("{}  {}", "Item", "20"),
+                                    text_style.clone(),
+                                )
+                                .with_style(Style {
+                                    align_self: AlignSelf::Center,
+                                    position_type: PositionType::Absolute,
+                                    position: UiRect {
+                                        top: Val::Px(12. + offset),
+                                        left: Val::Px(25.),
+                                        ..default()
+                                    },
+                                    ..default()
+                                }),
+                            )
+                            .insert(InventorySlot(i));
+                    }
+                });
+        });
 }
