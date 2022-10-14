@@ -5,7 +5,8 @@ edition = "2021"
 
 [dependencies]
 rand = "0.8.5"
-bevy_ecs_tilemap = "0.7"
+# TODO: update tilemap to .8
+bevy_ecs_tilemap = "0.7.0"
 bevy_asset_loader = { version = "0.12.1", features = ["2d"] }
 bevy-inspector-egui = "0.13.0"
 

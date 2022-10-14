@@ -1,5 +1,5 @@
 use crate::{
-    inventory::{Inventory, ItemPickup},
+    inventory::{Inventory, InventoryUpdate, ItemPickup},
     item::Item,
     SpriteAssets,
 };
@@ -72,7 +72,7 @@ pub struct InputCapture {
     movement: Vec2,
 }
 
-pub struct PlayerID(pub u32);
+pub struct PlayerEntity(pub Entity);
 
 fn startup(mut commands: Commands, sprites: Res<SpriteAssets>) {
     let player_entity = commands
@@ -91,7 +91,7 @@ fn startup(mut commands: Commands, sprites: Res<SpriteAssets>) {
         .insert(Inventory::new(20))
         .id();
 
-    commands.insert_resource(PlayerID(player_entity.id()));
+    commands.insert_resource(PlayerEntity(player_entity));
 }
 
 fn direction_animation(
@@ -184,6 +184,7 @@ fn pickup_item(
     player_q: Query<InventoryQuery, (With<Player>, Without<Item>)>,
     items_q: Query<ItemQuery, (Without<Inventory>, Without<Player>)>,
     mut ev_itempickup: EventWriter<ItemPickup>,
+    mut ev_inventory_update: EventWriter<InventoryUpdate>,
 ) {
     let (player, who, _inv) = player_q.single();
     for (transform, item, info) in items_q.iter() {
@@ -199,6 +200,7 @@ fn pickup_item(
                 what_item: info.name.to_string(),
                 who,
             });
+            ev_inventory_update.send(InventoryUpdate);
         }
     }
 }

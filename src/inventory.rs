@@ -3,7 +3,7 @@ use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 use crate::{
     item::Item,
-    player::{Interact, PlayerID},
+    player::{Interact, Player, PlayerEntity},
     AppState, FontAssets, SpriteAssets,
 };
 
@@ -24,10 +24,12 @@ impl Plugin for InventoryPlugin {
                         .label(Interact::Reciever)
                         .after(Interact::Caller),
                 )
+                .with_system(ui_inventory_update)
                 .with_system(toggle_ui_menu),
         )
         .add_event::<ItemPickup>()
         .add_event::<PlayerPickupSuccess>()
+        .add_event::<InventoryUpdate>()
         .register_inspectable::<Inventory>();
     }
 }
@@ -42,7 +44,6 @@ pub struct Inventory {
 pub struct Stackable;
 
 #[derive(Component)]
-// Maybe we should attach a player id for multiplayer?
 pub struct PlayerMenu;
 
 #[derive(Component)]
@@ -63,11 +64,16 @@ impl Inventory {
 fn toggle_ui_menu(
     keeb_input: Res<Input<KeyCode>>,
     mut query: Query<(&mut Visibility, &mut Transform), With<InventoryUINode>>,
+    mut ev_invopen: EventWriter<InventoryUpdate>,
 ) {
     let mut menu = query.single_mut();
 
     if keeb_input.just_pressed(KeyCode::X) {
         menu.0.is_visible = !menu.0.is_visible;
+    }
+
+    if menu.0.is_visible {
+        ev_invopen.send(InventoryUpdate);
     }
 }
 
@@ -80,6 +86,8 @@ pub struct ItemPickup {
 
 pub struct PlayerPickupSuccess;
 
+pub struct InventoryUpdate;
+
 //Called when an entity pickups an item
 fn add_to_inventory(
     mut ev_itempickup: EventReader<ItemPickup>,
@@ -87,7 +95,7 @@ fn add_to_inventory(
     mut commands: Commands,
     mut inventories: Query<&mut Inventory>, //Every inventory
     all_items: Query<(&Item, Option<&Stackable>)>, //Every item
-    player_id: Res<PlayerID>,
+    player_e: Res<PlayerEntity>,
 ) {
     for ev in ev_itempickup.iter() {
         let mut ev_inventory = match inventories.get_mut(ev.who) {
@@ -124,7 +132,7 @@ fn add_to_inventory(
                     ev_inventory.items.insert(0, ground_item.clone());
                 }
                 info!("entity id:{} despawned", ev.item.id());
-                if ev.who.id() == player_id.0 {
+                if ev.who == player_e.0 {
                     ev_success.send(PlayerPickupSuccess);
                 }
                 commands.entity(ev.item).despawn();
@@ -144,11 +152,11 @@ fn inventory_ui_startup(
         font_size: 24.0,
         color: Color::BLACK,
     };
-    let window_style = Style {
+    let inv_bg_style = Style {
         align_self: AlignSelf::Center,
         position_type: PositionType::Absolute,
         position: UiRect {
-            top: Val::Percent(4.),
+            top: Val::Percent(5.),
             left: Val::Percent(15.),
             ..default()
         },
@@ -165,10 +173,8 @@ fn inventory_ui_startup(
             // the window which objects for the inventory ui will sit on
             parent
                 .spawn_bundle(ImageBundle {
-                    image: UiImage {
-                        0: elements.menu.clone(),
-                    },
-                    style: window_style.clone(),
+                    image: UiImage(elements.menu.clone()),
+                    style: inv_bg_style.clone(),
                     image_mode: ImageMode::KeepAspect,
                     ..default()
                 })
@@ -178,23 +184,64 @@ fn inventory_ui_startup(
                         let offset: f32 = i as f32 * 20.0;
                         inv_parent
                             .spawn_bundle(
-                                TextBundle::from_section(
-                                    format!("{}  {}", "Item", "20"),
-                                    text_style.clone(),
-                                )
-                                .with_style(Style {
-                                    align_self: AlignSelf::Center,
-                                    position_type: PositionType::Absolute,
-                                    position: UiRect {
-                                        top: Val::Px(12. + offset),
-                                        left: Val::Px(25.),
+                                TextBundle::from_section(String::new(), text_style.clone())
+                                    .with_style(Style {
+                                        align_self: AlignSelf::Center,
+                                        position_type: PositionType::Absolute,
+                                        position: UiRect {
+                                            top: Val::Px(12. + offset),
+                                            left: Val::Px(44.),
+                                            ..default()
+                                        },
                                         ..default()
-                                    },
-                                    ..default()
-                                }),
+                                    }),
                             )
                             .insert(InventorySlot(i));
+                        // .with_children(|inv_slot_parent| {
+                        //     inv_slot_parent.spawn_bundle(AtlasImageBundle {
+                        //         style: Style {
+                        //             align_self: AlignSelf::Center,
+                        //             position_type: PositionType::Absolute,
+                        //             position: UiRect {
+                        //                 top: Val::Px(12. + offset),
+                        //                 left: Val::Px(0.),
+                        //                 ..default()
+                        //             },
+                        //             ..default()
+                        //         },
+                        //         atlas_image: UiAtlasImage {
+                        //             atlas: elements.items.clone(),
+                        //             index: 19,
+                        //         },
+
+                        //         ..Default::default()
+                        //     });
+                        // });
                     }
                 });
         });
+}
+
+fn ui_inventory_update(
+    mut ev_invopen: EventReader<InventoryUpdate>,
+    mut q_ui_slots: Query<(&mut Text, &InventorySlot)>,
+    q_inv: Query<(&mut Inventory, &Player)>, //Every inventory
+    player_e: Res<PlayerEntity>,
+) {
+    for _ in ev_invopen.iter() {
+        let (player_inv, _player) = match q_inv.get(player_e.0) {
+            Ok((inv, p)) => (inv, p),
+            Err(_) => panic!("Could not fetch the player's inventory!!!"),
+        };
+
+        for (mut text, slot_idx) in q_ui_slots.iter_mut() {
+            let item = player_inv.items.get(slot_idx.0 as usize);
+            if item != None {
+                let i = item.unwrap().clone();
+                text.sections[0].value = format!("{: <20}AMT:{:>3}", i.name, i.amt);
+            } else {
+                text.sections[0].value = String::from("------");
+            }
+        }
+    }
 }
