@@ -72,23 +72,26 @@ pub struct InputCapture {
     movement: Vec2,
 }
 
+#[derive(Resource)]
 pub struct PlayerEntity(pub Entity);
 
 fn startup(mut commands: Commands, sprites: Res<SpriteAssets>) {
     let player_entity = commands
-        .spawn_bundle(SpriteSheetBundle {
-            texture_atlas: sprites.player_move.clone(),
-            transform: Transform::from_xyz(10., 0., Z_PLAYER),
-            ..Default::default()
-        })
-        .insert(Player)
-        .insert(AnimationTimer(Timer::from_seconds(0.175, true)))
-        .insert(PlayerState::Idle)
-        .insert(InputCapture {
-            movement: Vec2::ZERO,
-        })
-        .insert(Direction::Down)
-        .insert(Inventory::new(20))
+        .spawn((
+            SpriteSheetBundle {
+                texture_atlas: sprites.player_move.clone(),
+                transform: Transform::from_xyz(10., 0., Z_PLAYER),
+                ..Default::default()
+            },
+            Player,
+            AnimationTimer(Timer::from_seconds(0.175, TimerMode::Repeating)),
+            PlayerState::Idle,
+            InputCapture {
+                movement: Vec2::ZERO,
+            },
+            Direction::Down,
+            Inventory::new(20),
+        ))
         .id();
 
     commands.insert_resource(PlayerEntity(player_entity));
@@ -158,7 +161,8 @@ fn player_input(
         *dir = Direction::Down;
     }
     if keyboard_input.pressed(KeyCode::C) {
-        // Find a way to create action events that get taken care of
+        // TODO Find a way to create action events that get taken care of
+        // 12/1 update, wtf was this message even for? action events instead of directly modifying input or dir?
     }
 }
 

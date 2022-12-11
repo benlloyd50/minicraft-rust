@@ -18,7 +18,7 @@ impl Plugin for AssetLoadPlugin {
     }
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 pub struct SpriteAssets {
     #[asset(texture_atlas(tile_size_x = 16., tile_size_y = 16., columns = 4, rows = 1))]
     #[asset(path = "player_move.png")]
@@ -37,13 +37,13 @@ pub struct SpriteAssets {
     pub menu: Handle<Image>,
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 pub struct SoundAssets {
     #[asset(path = "sounds/pickup.ogg")]
     pub item_pickup: Handle<AudioSource>,
 }
 
-#[derive(AssetCollection)]
+#[derive(AssetCollection, Resource)]
 pub struct FontAssets {
     #[asset(path = "fonts/CelticTime.ttf")]
     pub celtic: Handle<Font>,

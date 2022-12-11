@@ -88,7 +88,7 @@ pub struct PlayerPickupSuccess;
 
 pub struct InventoryUpdate;
 
-//Called when an entity pickups an item
+//Called when an entity pickups an item (only works for player)
 fn add_to_inventory(
     mut ev_itempickup: EventReader<ItemPickup>,
     mut ev_success: EventWriter<PlayerPickupSuccess>,
@@ -131,13 +131,13 @@ fn add_to_inventory(
                     //If the item doesn't exist in the inventory or it does but it is not stackable
                     ev_inventory.items.insert(0, ground_item.clone());
                 }
-                info!("entity id:{} despawned", ev.item.id());
+                info!("entity id:{} despawned", ev.item.index());
                 if ev.who == player_e.0 {
                     ev_success.send(PlayerPickupSuccess);
                 }
                 commands.entity(ev.item).despawn();
             }
-            Err(err) => eprintln!("{}, id:{}", err, ev.item.id()),
+            Err(err) => eprintln!("{}, id:{}", err, ev.item.index()),
         };
     }
 }
@@ -164,15 +164,17 @@ fn inventory_ui_startup(
         ..default()
     };
     commands
-        .spawn_bundle(NodeBundle {
-            transform: Transform::from_xyz(0., 0., Z_UI),
-            ..default()
-        })
-        .insert(InventoryUINode)
+        .spawn((
+            NodeBundle {
+                transform: Transform::from_xyz(0., 0., Z_UI),
+                ..default()
+            },
+            InventoryUINode,
+        ))
         .with_children(|parent| {
             // the window which objects for the inventory ui will sit on
             parent
-                .spawn_bundle(ImageBundle {
+                .spawn(ImageBundle {
                     image: UiImage(elements.menu.clone()),
                     style: inv_bg_style.clone(),
                     image_mode: ImageMode::KeepAspect,
@@ -183,7 +185,7 @@ fn inventory_ui_startup(
                     for i in 0..20 {
                         let offset: f32 = i as f32 * 20.0;
                         inv_parent
-                            .spawn_bundle(
+                            .spawn(
                                 TextBundle::from_section(String::new(), text_style.clone())
                                     .with_style(Style {
                                         align_self: AlignSelf::Center,

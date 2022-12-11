@@ -28,11 +28,6 @@ fn main() {
         .add_plugins(EnginePlugins)
         .add_system_set(SystemSet::on_enter(AppState::GameLoad).with_system(tm_startup))
         .add_system_set(SystemSet::on_update(AppState::GameLoad).with_system(enter_game))
-        .add_system_set(
-            SystemSet::on_update(AppState::InGame)
-                .with_system(swap_texture_or_hide)
-                .after(Interact::Caller),
-        )
         .add_plugin(TilemapPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(CameraPlugin)
@@ -51,9 +46,9 @@ fn enter_game(mut state: ResMut<State<AppState>>) {
 }
 
 fn tm_startup(mut commands: Commands, tiles: Res<SpriteAssets>) {
-    let tilemap_size = TilemapSize { x: 10, y: 10 };
+    let tilemap_size = TilemapSize { x: 500, y: 500 };
 
-    let tilemap_entity = commands.spawn().id();
+    let tilemap_entity = commands.spawn_empty().id();
     let mut tile_storage = TileStorage::empty(tilemap_size);
 
     // Spawn the elements of the tilemap.
@@ -62,58 +57,29 @@ fn tm_startup(mut commands: Commands, tiles: Res<SpriteAssets>) {
             let tile_pos = TilePos { x, y };
             let tile_index = rand::random::<u32>() % 5;
             let tile_entity = commands
-                .spawn()
-                .insert_bundle(TileBundle {
+                .spawn(TileBundle {
                     position: tile_pos,
                     tilemap_id: TilemapId(tilemap_entity),
-                    texture: TileTexture(tile_index),
+                    texture_index: TileTextureIndex(tile_index),
                     ..Default::default()
                 })
                 .id();
-            tile_storage.set(&tile_pos, Some(tile_entity));
+            tile_storage.set(&tile_pos, tile_entity);
         }
     }
 
     let tile_size = TilemapTileSize { x: 16.0, y: 16.0 };
+    let grid_size = tile_size.into(); // Not really sure what this is doing?
+    let map_type = TilemapType::default();
 
-    commands
-        .entity(tilemap_entity)
-        .insert_bundle(TilemapBundle {
-            grid_size: TilemapGridSize { x: 16.0, y: 16.0 },
-            size: tilemap_size,
-            storage: tile_storage,
-            texture: TilemapTexture(tiles.tiles1.clone()),
-            tile_size,
-            transform: bevy_ecs_tilemap::helpers::get_centered_transform_2d(
-                &tilemap_size,
-                &tile_size,
-                Z_FLOOR,
-            ),
-            ..Default::default()
-        });
-}
-
-fn swap_texture_or_hide(
-    sprites: Res<SpriteAssets>,
-    keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<(&mut TilemapTexture, &mut Visibility)>,
-) {
-    if keyboard_input.just_pressed(KeyCode::Space) {
-        for (mut tilemap_tex, _) in &mut query {
-            if tilemap_tex.0 == sprites.tiles1 {
-                tilemap_tex.0 = sprites.tiles2.clone();
-            } else {
-                tilemap_tex.0 = sprites.tiles1.clone();
-            }
-        }
-    }
-    if keyboard_input.just_pressed(KeyCode::H) {
-        for (_, mut visibility) in &mut query {
-            if visibility.is_visible {
-                visibility.is_visible = false;
-            } else {
-                visibility.is_visible = true;
-            }
-        }
-    }
+    commands.entity(tilemap_entity).insert(TilemapBundle {
+        grid_size,
+        map_type,
+        size: tilemap_size,
+        storage: tile_storage,
+        texture: TilemapTexture::Single(tiles.tiles1.clone()),
+        tile_size,
+        transform: get_tilemap_center_transform(&tilemap_size, &grid_size, &map_type, Z_FLOOR),
+        ..Default::default()
+    });
 }

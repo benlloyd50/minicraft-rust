@@ -41,8 +41,8 @@ impl Default for Item {
 fn startup(mut commands: Commands, sprites: Res<SpriteAssets>) {
     for i in 0..100 {
         let offset_x: f32 = i as f32;
-        commands
-            .spawn_bundle(SpriteSheetBundle {
+        commands.spawn((
+            SpriteSheetBundle {
                 texture_atlas: sprites.items.clone(),
                 sprite: TextureAtlasSprite {
                     index: 4,
@@ -51,19 +51,20 @@ fn startup(mut commands: Commands, sprites: Res<SpriteAssets>) {
                 },
                 transform: Transform::from_xyz(30. + offset_x * 2.0, 5., Z_ITEM),
                 ..default()
-            })
-            .insert(Item {
+            },
+            Item {
                 name: format!("Wood, {}", i % 10),
                 amt: 1,
                 sprite_index: 4,
-            })
-            .insert(Stackable);
+            },
+            Stackable,
+        ));
     }
 
     for i in (0..100).step_by(10) {
         let offset_x: f32 = i as f32;
-        commands
-            .spawn_bundle(SpriteSheetBundle {
+        commands.spawn((
+            SpriteSheetBundle {
                 texture_atlas: sprites.items.clone(),
                 sprite: TextureAtlasSprite {
                     index: 2,
@@ -72,9 +73,10 @@ fn startup(mut commands: Commands, sprites: Res<SpriteAssets>) {
                 },
                 transform: Transform::from_xyz(30. + offset_x * 2.0, 20., Z_ITEM),
                 ..default()
-            })
-            .insert(Item::pebble())
-            .insert(Stackable);
+            },
+            Item::pebble(),
+            Stackable,
+        ));
     }
 }
 

@@ -22,15 +22,17 @@ struct CamScrollLock(bool);
 
 fn load_camera(mut commands: Commands) {
     let _camera_entity = commands
-        .spawn_bundle(Camera2dBundle {
-            transform: Transform::from_xyz(0.0, 0.0, Z_CAM),
-            projection: OrthographicProjection {
-                scale: 0.5,
+        .spawn((
+            Camera2dBundle {
+                transform: Transform::from_xyz(0.0, 0.0, Z_CAM),
+                projection: OrthographicProjection {
+                    scale: 0.5,
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
-        })
-        .insert(CamScrollLock(true))
+            CamScrollLock(true),
+        ))
         .id();
 }
 

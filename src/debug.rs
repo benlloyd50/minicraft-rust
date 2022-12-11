@@ -4,18 +4,19 @@ use bevy::{
 };
 use bevy_inspector_egui::{widgets::InspectorQuerySingle, Inspectable, InspectorPlugin};
 
-use crate::{inventory::InventoryUINode, player::Player};
+// inventory::InventoryUINode,
+use crate::player::Player;
 
 pub struct DebugPlugin;
 
-#[derive(Inspectable, Default)]
+#[derive(Inspectable, Resource, Default)]
 struct Data {
     //Example queries for stuffs
     // query: InspectorQuery<Entity, With<Transform>>,
     // has_material: InspectorQuery<&'static mut Handle<StandardMaterial>>,
     #[inspectable(despawnable = true)]
     player: InspectorQuerySingle<Entity, With<Player>>,
-    inventory_ui: InspectorQuerySingle<Entity, With<InventoryUINode>>,
+    // inventory_ui: InspectorQuerySingle<Entity, With<InventoryUINode>>,
 }
 
 impl Plugin for DebugPlugin {
