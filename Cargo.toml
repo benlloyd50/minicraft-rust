@@ -8,6 +8,7 @@ rand = "0.8.5"
 bevy_ecs_tilemap = "0.9.0"
 bevy_asset_loader = { version = "0.14.1", features = ["2d"] }
 bevy-inspector-egui = "0.14"
+bracket-noise = "~0.8"
 
 [dependencies.bevy]
 version = "0.9"

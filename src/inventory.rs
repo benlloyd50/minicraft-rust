@@ -112,7 +112,6 @@ fn add_to_inventory(
                 return;
             }
         };
-
         match all_items.get(ev.item) {
             //make sure the ground item still exists and an old event didnt already handle it
             Ok((ground_item, is_stackable)) => {
@@ -152,6 +151,7 @@ fn inventory_ui_startup(
         font_size: 24.0,
         color: Color::BLACK,
     };
+    
     let inv_bg_style = Style {
         align_self: AlignSelf::Center,
         position_type: PositionType::Absolute,
@@ -163,10 +163,12 @@ fn inventory_ui_startup(
         size: Size::new(Val::Px(400.), Val::Px(700.)),
         ..default()
     };
+
     commands
         .spawn((
             NodeBundle {
                 transform: Transform::from_xyz(0., 0., Z_UI),
+                visibility: Visibility { is_visible: false },   // inventory is hidden on startup
                 ..default()
             },
             InventoryUINode,

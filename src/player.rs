@@ -9,7 +9,7 @@ use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 const Z_PLAYER: f32 = 40.;
-const PLAYER_SPEED: f32 = 40.0;
+const PLAYER_SPEED: f32 = 80.0;
 
 pub struct PlayerPlugin;
 

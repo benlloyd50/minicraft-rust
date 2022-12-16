@@ -39,7 +39,7 @@ pub struct SpriteAssets {
 
 #[derive(AssetCollection, Resource)]
 pub struct SoundAssets {
-    #[asset(path = "sounds/pickup.ogg")]
+    #[asset(path = "sounds/pickup.wav")]
     pub item_pickup: Handle<AudioSource>,
 }
 
