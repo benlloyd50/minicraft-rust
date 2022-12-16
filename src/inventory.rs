@@ -201,26 +201,6 @@ fn inventory_ui_startup(
                                     }),
                             )
                             .insert(InventorySlot(i));
-                        // .with_children(|inv_slot_parent| {
-                        //     inv_slot_parent.spawn_bundle(AtlasImageBundle {
-                        //         style: Style {
-                        //             align_self: AlignSelf::Center,
-                        //             position_type: PositionType::Absolute,
-                        //             position: UiRect {
-                        //                 top: Val::Px(12. + offset),
-                        //                 left: Val::Px(0.),
-                        //                 ..default()
-                        //             },
-                        //             ..default()
-                        //         },
-                        //         atlas_image: UiAtlasImage {
-                        //             atlas: elements.items.clone(),
-                        //             index: 19,
-                        //         },
-
-                        //         ..Default::default()
-                        //     });
-                        // });
                     }
                 });
         });
