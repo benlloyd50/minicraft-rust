@@ -130,7 +130,7 @@ fn add_to_inventory(
                     //If the item doesn't exist in the inventory or it does but it is not stackable
                     ev_inventory.items.insert(0, ground_item.clone());
                 }
-                info!("entity id:{} despawned", ev.item.index());
+
                 if ev.who == player_e.0 {
                     ev_success.send(PlayerPickupSuccess);
                 }
@@ -151,7 +151,7 @@ fn inventory_ui_startup(
         font_size: 24.0,
         color: Color::BLACK,
     };
-    
+
     let inv_bg_style = Style {
         align_self: AlignSelf::Center,
         position_type: PositionType::Absolute,
@@ -168,7 +168,7 @@ fn inventory_ui_startup(
         .spawn((
             NodeBundle {
                 transform: Transform::from_xyz(0., 0., Z_UI),
-                visibility: Visibility { is_visible: false },   // inventory is hidden on startup
+                visibility: Visibility { is_visible: false }, // inventory is hidden on startup
                 ..default()
             },
             InventoryUINode,

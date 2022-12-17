@@ -23,13 +23,16 @@ pub struct SpriteAssets {
     #[asset(texture_atlas(tile_size_x = 16., tile_size_y = 16., columns = 4, rows = 1))]
     #[asset(path = "player_move.png")]
     pub player_move: Handle<TextureAtlas>,
+
     #[asset(path = "tiles.png")]
     pub tiles1: Handle<Image>,
     #[asset(path = "tiles2.png")]
     pub tiles2: Handle<Image>,
+
     #[asset(texture_atlas(tile_size_x = 8., tile_size_y = 8., columns = 14, rows = 2))]
     #[asset(path = "test_items.png")]
     pub items: Handle<TextureAtlas>,
+
     #[asset(texture_atlas(tile_size_x = 8., tile_size_y = 8., columns = 8, rows = 1))]
     #[asset(path = "ui_and_effects.png")]
     pub ui_and_effects: Handle<TextureAtlas>,

@@ -7,7 +7,7 @@ pub struct ItemPlugin;
 
 impl Plugin for ItemPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_enter(AppState::InGame).with_system(startup))
+        app.add_system_set(SystemSet::on_enter(AppState::InGame).with_system(spawn_test_items))
             .register_inspectable::<Item>();
     }
 }
@@ -38,7 +38,7 @@ impl Default for Item {
     }
 }
 
-fn startup(mut commands: Commands, sprites: Res<SpriteAssets>) {
+fn spawn_test_items(mut commands: Commands, sprites: Res<SpriteAssets>) {
     for i in 0..100 {
         let offset_x: f32 = i as f32;
         commands.spawn((
@@ -89,11 +89,11 @@ impl Item {
         }
     }
 
-    fn wood() -> Item {
+    /* fn wood() -> Item {
         Item {
             name: "Wood".to_string(),
             amt: 1,
             sprite_index: 4,
         }
-    }
+    } */
 }
