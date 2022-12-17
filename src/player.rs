@@ -7,6 +7,7 @@ use crate::{
 use super::AppState;
 use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
+use bevy_rapier2d::prelude::*;
 
 const Z_PLAYER: f32 = 40.;
 const PLAYER_SPEED: f32 = 80.0;
@@ -91,6 +92,11 @@ fn startup(mut commands: Commands, sprites: Res<SpriteAssets>) {
             },
             Direction::Down,
             Inventory::new(20),
+            RigidBody::Dynamic,
+            Velocity::zero(),
+            Collider::round_cuboid(1.0, 1.0, 0.05),
+            ActiveEvents::COLLISION_EVENTS,
+            LockedAxes::ROTATION_LOCKED,
         ))
         .id();
 
@@ -160,24 +166,23 @@ fn player_input(
         input.movement.y -= 1.0;
         *dir = Direction::Down;
     }
-    if keyboard_input.pressed(KeyCode::C) {
-        // TODO Find a way to create action events that get taken care of
-        // 12/1 update, wtf was this message even for? action events instead of directly modifying input or dir?
-    }
 }
 
+// Velocity based movement
 fn move_player(
-    time: Res<Time>,
-    mut q: Query<(&mut Transform, &mut PlayerState, &InputCapture), With<Player>>,
+    _time: Res<Time>,
+    mut q: Query<(&mut Velocity, &mut PlayerState, &InputCapture), With<Player>>,
 ) {
-    let (mut transform, mut state, input_val) = q.single_mut();
-    transform.translation.x += input_val.movement.x * PLAYER_SPEED * time.delta_seconds();
-    transform.translation.y += input_val.movement.y * PLAYER_SPEED * time.delta_seconds();
+    let (mut velocity, mut state, input_val) = q.single_mut();
+
+    let move_delta = Vec2::new(input_val.movement.x, input_val.movement.y);
 
     if input_val.movement != Vec2::ZERO {
         *state = PlayerState::Moving;
+        velocity.linvel = move_delta * PLAYER_SPEED;
     } else {
         *state = PlayerState::Idle;
+        velocity.linvel = Vec2::ZERO;
     }
 }
 
@@ -194,11 +199,9 @@ fn pickup_item(
     for (transform, item, info) in items_q.iter() {
         let item_pos = Vec2::new(transform.translation.x, transform.translation.y);
         let player_pos = Vec2::new(player.translation.x, player.translation.y);
+
         let dist = item_pos.distance(player_pos);
-        // println!("{}", dist);
-        // && inv.last_picked_up_item_id != item.id()
         if dist < 8.0 {
-            info!("Sending event to pickup");
             ev_itempickup.send(ItemPickup {
                 item,
                 what_item: info.name.to_string(),
